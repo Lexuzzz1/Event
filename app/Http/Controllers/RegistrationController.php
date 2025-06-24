@@ -15,7 +15,6 @@ class RegistrationController extends Controller
     {
         $user = Auth::user();
 
-        // Cek apakah sudah terdaftar
         $existing = Registration::where('user_id', $user->id)
             ->where('event_id', $event->id)
             ->first();
@@ -32,9 +31,9 @@ class RegistrationController extends Controller
 
         if ($event->registration_fee > 0) {
             return redirect()->route('payment.upload', $event->id)->with('info', 'Silakan upload bukti pembayaran.');
-        } else {
-            return redirect()->back()->with('success', 'Berhasil mendaftar.');
         }
+
+        return redirect()->back()->with('success', 'Berhasil mendaftar.');
     }
 
     // Tampilkan form upload pembayaran
@@ -58,7 +57,6 @@ class RegistrationController extends Controller
             ->where('event_id', $event->id)
             ->firstOrFail();
 
-        // Simpan file
         $path = $request->file('proof_of_payment')->store('payments', 'public');
 
         $registration->update([
@@ -66,6 +64,31 @@ class RegistrationController extends Controller
             'payment_status' => 'paid',
         ]);
 
-        return redirect()->route('event.show', $event->id)->with('success', 'Bukti pembayaran berhasil diunggah. Menunggu konfirmasi.');
+        return redirect()->route('event.detail', $event->id)
+            ->with('success', 'Bukti pembayaran berhasil diunggah. Menunggu konfirmasi.');
+    }
+
+    // ✅ Untuk role keuangan - Tampilkan semua pembayaran
+    public function financeDashboard()
+    {
+        $registrations = Registration::with(['user', 'event'])
+            ->whereNotNull('payment_status')
+            ->orderByDesc('updated_at')
+            ->get();
+
+        return view('finance.dashboard', compact('registrations'));
+    }
+
+    // ✅ Untuk role keuangan - Verifikasi pembayaran
+    public function verify($id)
+    {
+        $registration = Registration::findOrFail($id);
+
+        if ($registration->payment_status === 'paid') {
+            $registration->update(['payment_status' => 'verified']);
+            return back()->with('success', 'Pembayaran berhasil diverifikasi.');
+        }
+
+        return back()->with('error', 'Status tidak dapat diverifikasi.');
     }
 }

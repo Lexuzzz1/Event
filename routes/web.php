@@ -45,4 +45,10 @@ Route::middleware(['auth', 'role:panitia'])->group(function () {
     Route::get('/event/{event}/view', [EventController::class, 'view'])->name('event.view');
 });
 
+Route::middleware(['auth', 'role:keuangan'])->group(function () {
+    Route::get('/keuangan', [RegistrationController::class, 'financeDashboard'])->name('finance.dashboard');
+    Route::put('/keuangan/verify/{id}', [RegistrationController::class, 'verify'])->name('finance.verify');
+});
+
+
 require __DIR__ . '/auth.php';
