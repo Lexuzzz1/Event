@@ -82,13 +82,31 @@ class RegistrationController extends Controller
     // ✅ Untuk role keuangan - Verifikasi pembayaran
     public function verify($id)
     {
-        $registration = Registration::findOrFail($id);
+    $registration = Registration::with('user', 'event')->findOrFail($id);
 
-        if ($registration->payment_status === 'paid') {
-            $registration->update(['payment_status' => 'verified']);
-            return back()->with('success', 'Pembayaran berhasil diverifikasi.');
-        }
+    if ($registration->payment_status === 'paid') {
+        $registration->update(['payment_status' => 'verified']);
 
-        return back()->with('error', 'Status tidak dapat diverifikasi.');
+        // Generate QR Code dengan konten (misalnya ID registrasi atau link)
+        $qrContent = "ID Registrasi: {$registration->id}, Event: {$registration->event->title}";
+        $fileName = 'barcodes/barcode_' . $registration->id . '.png';
+
+        // Simpan QR ke public/storage/barcodes
+        $qrPath = storage_path('app/public/' . $fileName);
+        QrCode::format('png')->size(200)->generate($qrContent, $qrPath);
+
+        // Simpan path barcode di DB
+        $registration->update([
+            'barcode_path' => $fileName,
+        ]);
+
+        // (Opsional) Kirim notifikasi email/user (fitur tambahan)
+
+        return back()->with('success', 'Pembayaran diverifikasi dan barcode berhasil dibuat.');
     }
+
+    return back()->with('error', 'Status tidak dapat diverifikasi.');
 }
+}
+
+
