@@ -4,6 +4,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FinanceController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -49,6 +51,24 @@ Route::middleware(['auth', 'role:keuangan'])->group(function () {
     Route::get('/keuangan', [RegistrationController::class, 'financeDashboard'])->name('finance.dashboard');
     Route::put('/keuangan/verify/{id}', [RegistrationController::class, 'verify'])->name('finance.verify');
 });
+
+// Profile routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/delete', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.delete');
+});
+// Authentication routes
+Route::middleware(['auth', 'role:keuangan'])->prefix('keuangan')->group(function () {
+    Route::get('/', [FinanceController::class, 'index'])->name('keuangan.dashboard');
+    Route::get('/verifikasi', [FinanceController::class, 'verifikasi'])->name('keuangan.verifikasi');
+    Route::post('/verifikasi/{id}', [FinanceController::class, 'prosesVerifikasi'])->name('keuangan.verifikasi.proses');
+    Route::get('/transaksi', [FinanceController::class, 'transaksi'])->name('keuangan.transaksi');
+    Route::get('/laporan', [FinanceController::class, 'laporan'])->name('keuangan.laporan');
+    Route::get('/bukti', [FinanceController::class, 'unduhBukti'])->name('keuangan.bukti');
+    Route::get('/bukti/download/{id}', [FinanceController::class, 'downloadBukti'])->name('keuangan.bukti.download');
+});
+
 
 
 require __DIR__ . '/auth.php';
